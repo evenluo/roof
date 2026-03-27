@@ -1,5 +1,6 @@
 import { parseCliArgs } from "./cli";
 import { loadRuntimeConfig, type AppConfig } from "./config";
+import { runPlanCommand } from "./plan";
 import { formatInspectOutput } from "./output";
 import { inspectCloudflareZone } from "./providers/cloudflare";
 import { inspectTencentZone } from "./providers/tencent";
@@ -89,10 +90,10 @@ async function main(argv: string[]): Promise<void> {
   if (cliArgs.command === "inspect") {
     const output = await runInspectCommand(cliArgs);
     console.log(output);
-    return;
+  } else {
+    const output = await runPlanCommand(cliArgs);
+    console.log(output);
   }
-
-  throw new Error(`Command not yet implemented: ${cliArgs.command}`);
 }
 
 if (import.meta.main) {
