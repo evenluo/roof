@@ -24,8 +24,8 @@ function validateRecord(
 
   const r = raw as Record<string, unknown>;
 
-  if (typeof r.name !== "string") {
-    throw new Error(`Zone "${zoneName}": record name must be a string`);
+  if (typeof r.name !== "string" || r.name.trim() === "") {
+    throw new Error(`Zone "${zoneName}": record name must be a non-empty string`);
   }
 
   if (
@@ -55,15 +55,15 @@ function validateRecord(
     );
   }
 
-  if (r.proxied !== undefined && provider !== "cloudflare") {
-    throw new Error(
-      `Zone "${zoneName}": record ${r.name} ${r.type} "proxied" is only allowed for Cloudflare zones`,
-    );
-  }
-
   if (r.proxied !== undefined && typeof r.proxied !== "boolean") {
     throw new Error(
       `Zone "${zoneName}": record ${r.name} ${r.type} proxied must be a boolean`,
+    );
+  }
+
+  if (r.proxied !== undefined && provider !== "cloudflare") {
+    throw new Error(
+      `Zone "${zoneName}": record ${r.name} ${r.type} "proxied" is only allowed for Cloudflare zones`,
     );
   }
 
