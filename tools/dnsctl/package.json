@@ -1,0 +1,19 @@
+{
+  "name": "dnsctl",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "inspect": "bun run src/index.ts inspect",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "typescript": "^5.9.3"
+  }
+}
+
