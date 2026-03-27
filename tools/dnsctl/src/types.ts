@@ -8,6 +8,11 @@ export interface NormalizedRecord {
   proxied?: boolean;
 }
 
+export type FetchLike = (
+  input: URL | RequestInfo,
+  init?: RequestInit,
+) => Promise<Response>;
+
 export interface CloudflareRecord {
   name: string;
   type: string;
@@ -22,4 +27,3 @@ export interface TencentRecord {
   Value: string;
   TTL: number;
 }
-

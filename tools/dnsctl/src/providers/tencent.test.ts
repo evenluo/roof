@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { FetchLike } from "../types";
+
 import { inspectTencentZone } from "./tencent";
 
 const originalDateNow = Date.now;
@@ -16,7 +18,7 @@ describe("inspectTencentZone", () => {
   test("calls DNSPod API 3.0, paginates records, and filters non-default lines", async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
 
-    const fetchImpl: typeof fetch = async (input, init) => {
+    const fetchImpl: FetchLike = async (input, init) => {
       const url = input instanceof Request ? input.url : String(input);
       requests.push({ url, init });
 
@@ -115,5 +117,32 @@ describe("inspectTencentZone", () => {
         ttl: 600,
       },
     ]);
+  });
+
+  test("surfaces Tencent API errors from the response body", async () => {
+    const fetchImpl: FetchLike = async () =>
+      new Response(
+        JSON.stringify({
+          Response: {
+            Error: {
+              Code: "AuthFailure.UnauthorizedOperation",
+              Message: "missing permission",
+            },
+            RequestId: "req-error",
+          },
+        }),
+        { status: 200 },
+      );
+
+    await expect(
+      inspectTencentZone({
+        secretId: "secret-id",
+        secretKey: "secret-key",
+        zoneName: "ihongben.com",
+        fetchImpl,
+      }),
+    ).rejects.toThrow(
+      "Tencent API error AuthFailure.UnauthorizedOperation: missing permission",
+    );
   });
 });

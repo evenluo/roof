@@ -1,7 +1,7 @@
 import { createHash, createHmac } from "node:crypto";
 
 import { normalizeRecordCollection, normalizeTencentRecord } from "../normalize/records";
-import type { NormalizedRecord, TencentRecord } from "../types";
+import type { FetchLike, NormalizedRecord, TencentRecord } from "../types";
 
 const DNSPOD_ENDPOINT = "https://dnspod.tencentcloudapi.com/";
 const DNSPOD_HOST = "dnspod.tencentcloudapi.com";
@@ -11,6 +11,10 @@ const DEFAULT_LINE_NAMES = new Set(["默认", "Default", "default", ""]);
 
 interface TencentRecordListResponse {
   Response: {
+    Error?: {
+      Code: string;
+      Message: string;
+    };
     RecordCountInfo: {
       TotalCount: number;
       ListCount: number;
@@ -72,11 +76,11 @@ async function callTencentApi<ResponsePayload>(options: {
   secretKey: string;
   action: string;
   body: Record<string, unknown>;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 }): Promise<ResponsePayload> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const timestamp = Math.floor(Date.now() / 1000);
-  const payload = JSON.stringify(options.body);
+  const requestPayload = JSON.stringify(options.body);
 
   const response = await fetchImpl(DNSPOD_ENDPOINT, {
     method: "POST",
@@ -85,7 +89,7 @@ async function callTencentApi<ResponsePayload>(options: {
         secretId: options.secretId,
         secretKey: options.secretKey,
         action: options.action,
-        payload,
+        payload: requestPayload,
         timestamp,
       }),
       "Content-Type": "application/json; charset=utf-8",
@@ -94,21 +98,37 @@ async function callTencentApi<ResponsePayload>(options: {
       "X-TC-Timestamp": String(timestamp),
       "X-TC-Version": DNSPOD_VERSION,
     },
-    body: payload,
+    body: requestPayload,
   });
 
   if (!response.ok) {
     throw new Error(`Tencent API request failed: ${options.action}`);
   }
 
-  return (await response.json()) as ResponsePayload;
+  const responsePayload = (await response.json()) as ResponsePayload & {
+    Response?: {
+      Error?: {
+        Code: string;
+        Message: string;
+      };
+    };
+  };
+
+  const apiError = responsePayload.Response?.Error;
+  if (apiError) {
+    throw new Error(
+      `Tencent API error ${apiError.Code}: ${apiError.Message}`,
+    );
+  }
+
+  return responsePayload;
 }
 
 export async function inspectTencentZone(options: {
   secretId: string;
   secretKey: string;
   zoneName: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 }): Promise<NormalizedRecord[]> {
   const records: TencentRecord[] = [];
   let offset = 0;
@@ -138,4 +158,3 @@ export async function inspectTencentZone(options: {
 
   return normalizeRecordCollection(records.map(normalizeTencentRecord));
 }
-

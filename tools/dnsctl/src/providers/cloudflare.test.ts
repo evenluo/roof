@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
+import type { FetchLike } from "../types";
+
 import { inspectCloudflareZone } from "./cloudflare";
 
 describe("inspectCloudflareZone", () => {
   test("looks up zone id, paginates records, and preserves proxied", async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
 
-    const fetchImpl: typeof fetch = async (input, init) => {
+    const fetchImpl: FetchLike = async (input, init) => {
       const url = input instanceof Request ? input.url : String(input);
       requests.push({ url, init });
 
@@ -95,4 +97,3 @@ describe("inspectCloudflareZone", () => {
     ]);
   });
 });
-

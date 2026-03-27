@@ -1,5 +1,5 @@
 import { normalizeCloudflareRecord, normalizeRecordCollection } from "../normalize/records";
-import type { CloudflareRecord, NormalizedRecord } from "../types";
+import type { CloudflareRecord, FetchLike, NormalizedRecord } from "../types";
 
 interface CloudflareZoneLookupResponse {
   success: boolean;
@@ -18,7 +18,7 @@ interface CloudflareDnsRecordsResponse {
 export async function inspectCloudflareZone(options: {
   apiToken: string;
   zoneName: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 }): Promise<NormalizedRecord[]> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const headers = {
@@ -61,4 +61,3 @@ export async function inspectCloudflareZone(options: {
     records.map((record) => normalizeCloudflareRecord(options.zoneName, record)),
   );
 }
-

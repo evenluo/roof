@@ -8,11 +8,10 @@
     "allowJs": false,
     "skipLibCheck": true,
     "types": [
-      "bun-types"
+      "bun"
     ]
   },
   "include": [
     "src/**/*.ts"
   ]
 }
-
