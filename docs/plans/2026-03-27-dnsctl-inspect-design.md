@@ -14,6 +14,7 @@
   - `maxtap.net` 由 Cloudflare 管理
 - 第一阶段只做查询，不做写入
 - 默认输出 YAML，JSON 作为可选输出格式
+- 实现阶段需要准备好本地 `.env.local` 与对应 `.gitignore`，并使用本地配置完成一次真实查询验证
 
 ## 2. 目标与非目标
 
@@ -74,6 +75,7 @@
 
 - `tools/dnsctl` 是独立 Bun 项目
 - `.env.local` 仅存在于 `tools/dnsctl/` 且不提交
+- `tools/dnsctl/.gitignore` 必须覆盖 `.env.local`
 - 第一阶段只需要 provider 查询和标准化逻辑
 
 ## 5. 命令模型
@@ -148,6 +150,7 @@ Q_DNS_RECORD_SECRET_KEY=
 - `.env.local` 仅用于本地
 - `.env.example` 只保留变量名，不放真实值
 - 后续接 GitHub Actions 时复用相同变量名
+- 实现完成后的真实 API 验证以前提是 `.env.local` 中已具备可用密钥
 
 ## 7. 输出结构
 
@@ -318,6 +321,8 @@ Failed to inspect zone "ihongben.com" from provider "tencent": authentication fa
 4. 默认输出统一 YAML，而不是两套 provider 原始结构
 5. 非 `A / AAAA / CNAME / TXT` 记录不会被丢弃
 6. 缺少密钥或 provider 查询失败时，命令明确失败并输出上下文信息
+7. 仓库中存在可直接使用的 `tools/dnsctl/.gitignore` 与 `tools/dnsctl/.env.example`
+8. 若 `tools/dnsctl/.env.local` 已填入真实密钥，则实现完成后需用该本地配置跑通一次真实查询验证
 
 ## 12. 后续计划入口
 
