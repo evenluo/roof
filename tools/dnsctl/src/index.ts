@@ -85,8 +85,14 @@ export async function runInspectCommand(
 
 async function main(argv: string[]): Promise<void> {
   const cliArgs = parseCliArgs(argv);
-  const output = await runInspectCommand(cliArgs);
-  console.log(output);
+
+  if (cliArgs.command === "inspect") {
+    const output = await runInspectCommand(cliArgs);
+    console.log(output);
+    return;
+  }
+
+  throw new Error(`Command not yet implemented: ${cliArgs.command}`);
 }
 
 if (import.meta.main) {

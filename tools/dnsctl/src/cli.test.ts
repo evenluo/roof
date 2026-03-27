@@ -37,3 +37,56 @@ describe("parseCliArgs", () => {
     );
   });
 });
+
+describe("parseCliArgs plan", () => {
+  test("uses text output and default file by default", () => {
+    expect(parseCliArgs(["plan"])).toEqual({
+      command: "plan",
+      format: "text",
+      file: "dns/dns.yaml",
+    });
+  });
+
+  test("switches to json output with --json", () => {
+    expect(parseCliArgs(["plan", "--json"])).toEqual({
+      command: "plan",
+      format: "json",
+      file: "dns/dns.yaml",
+    });
+  });
+
+  test("overrides file path with --file", () => {
+    expect(parseCliArgs(["plan", "--file", "custom.yaml"])).toEqual({
+      command: "plan",
+      format: "text",
+      file: "custom.yaml",
+    });
+  });
+
+  test("accepts --zone for single zone plan", () => {
+    expect(parseCliArgs(["plan", "--zone", "maxtap.net"])).toEqual({
+      command: "plan",
+      format: "text",
+      file: "dns/dns.yaml",
+      zone: "maxtap.net",
+    });
+  });
+
+  test("rejects missing value for --file", () => {
+    expect(() => parseCliArgs(["plan", "--file"])).toThrow(
+      "Missing value for --file",
+    );
+  });
+
+  test("rejects missing value for --zone", () => {
+    expect(() => parseCliArgs(["plan", "--zone"])).toThrow(
+      "Missing value for --zone",
+    );
+  });
+
+  test("rejects unknown flags", () => {
+    expect(() => parseCliArgs(["plan", "--yaml"])).toThrow(
+      "Unknown argument: --yaml",
+    );
+  });
+});
