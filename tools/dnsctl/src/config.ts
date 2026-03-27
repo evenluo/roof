@@ -1,8 +1,10 @@
+import { config as loadDotenv } from "dotenv";
+
+import type { Provider } from "./types";
+
 export const SUPPORTED_ZONES = ["ihongben.com", "maxtap.net"] as const;
 
 type SupportedZone = (typeof SUPPORTED_ZONES)[number];
-
-type Provider = "cloudflare" | "tencent";
 
 export interface AppConfig {
   credentials: {
@@ -49,3 +51,7 @@ export function loadConfig(
   };
 }
 
+export function loadRuntimeConfig(): AppConfig {
+  loadDotenv({ path: ".env.local", quiet: true });
+  return loadConfig(process.env);
+}

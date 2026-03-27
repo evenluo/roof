@@ -27,3 +27,43 @@ export interface TencentRecord {
   Value: string;
   TTL: number;
 }
+
+export const SUPPORTED_RECORD_TYPES = [
+  "A",
+  "AAAA",
+  "CNAME",
+  "TXT",
+  "MX",
+] as const;
+export type SupportedRecordType = (typeof SUPPORTED_RECORD_TYPES)[number];
+
+export type Provider = "cloudflare" | "tencent";
+
+export interface FieldChange {
+  from: string | number | boolean;
+  to: string | number | boolean;
+}
+
+export interface RecordUpdate {
+  name: string;
+  type: string;
+  changes: Record<string, FieldChange>;
+}
+
+export interface ZonePlanResult {
+  provider: Provider;
+  creates: NormalizedRecord[];
+  updates: RecordUpdate[];
+  deletes: NormalizedRecord[];
+}
+
+export interface ZonePlanError {
+  provider: Provider;
+  error: string;
+}
+
+export interface PlanResult {
+  file: string;
+  generatedAt: string;
+  zones: Record<string, ZonePlanResult | ZonePlanError>;
+}

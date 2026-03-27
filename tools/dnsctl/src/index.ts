@@ -1,7 +1,5 @@
-import { config as loadDotenv } from "dotenv";
-
 import { parseCliArgs } from "./cli";
-import { loadConfig, type AppConfig } from "./config";
+import { loadRuntimeConfig, type AppConfig } from "./config";
 import { formatInspectOutput } from "./output";
 import { inspectCloudflareZone } from "./providers/cloudflare";
 import { inspectTencentZone } from "./providers/tencent";
@@ -27,17 +25,8 @@ function defaultNow(): string {
   return new Date().toISOString();
 }
 
-function loadRuntimeConfig(): AppConfig {
-  loadDotenv({
-    path: ".env.local",
-    quiet: true,
-  });
-
-  return loadConfig(process.env);
-}
-
 export async function runInspectCommand(
-  cliArgs: ReturnType<typeof parseCliArgs>,
+  cliArgs: { command: "inspect"; format: "yaml" | "json"; zone?: string },
   deps?: Partial<InspectDependencies>,
 ): Promise<string> {
   const config = deps?.config ?? loadRuntimeConfig();
