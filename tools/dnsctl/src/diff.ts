@@ -5,6 +5,7 @@ export interface DiffResult {
   creates: NormalizedRecord[];
   updates: RecordUpdate[];
   deletes: NormalizedRecord[];
+  skippedMultiValue: NormalizedRecord[];
 }
 
 function recordKey(record: NormalizedRecord): string {
@@ -48,17 +49,28 @@ export function filterSupportedRecords(
   );
 }
 
-function findDuplicateKeys(records: NormalizedRecord[]): string[] {
-  const seen = new Map<string, number>();
-
-  for (const record of records) {
-    const key = `${record.name} ${record.type}`;
-    seen.set(key, (seen.get(key) ?? 0) + 1);
+function separateMultiValueRecords(records: NormalizedRecord[]): {
+  unique: NormalizedRecord[];
+  multiValue: NormalizedRecord[];
+} {
+  const counts = new Map<string, number>();
+  for (const r of records) {
+    const key = recordKey(r);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   }
 
-  return [...seen.entries()]
-    .filter(([, count]) => count > 1)
-    .map(([key, count]) => `${key} (${count} records)`);
+  const unique: NormalizedRecord[] = [];
+  const multiValue: NormalizedRecord[] = [];
+
+  for (const r of records) {
+    if (counts.get(recordKey(r))! > 1) {
+      multiValue.push(r);
+    } else {
+      unique.push(r);
+    }
+  }
+
+  return { unique, multiValue };
 }
 
 export function computeZoneDiff(
@@ -67,15 +79,10 @@ export function computeZoneDiff(
 ): DiffResult {
   const filteredRemote = filterSupportedRecords(remote);
 
-  const duplicates = findDuplicateKeys(filteredRemote);
-  if (duplicates.length > 0) {
-    throw new Error(
-      `Duplicate name+type in remote records: ${duplicates.join(", ")}. Multi-value records are not supported`,
-    );
-  }
+  const { unique: uniqueRemote, multiValue: skippedMultiValue } = separateMultiValueRecords(filteredRemote);
 
   const declaredMap = buildRecordMap(declared);
-  const remoteMap = buildRecordMap(filteredRemote);
+  const remoteMap = buildRecordMap(uniqueRemote);
 
   const creates: NormalizedRecord[] = [];
   const updates: RecordUpdate[] = [];
@@ -104,5 +111,5 @@ export function computeZoneDiff(
     }
   }
 
-  return { creates, updates, deletes };
+  return { creates, updates, deletes, skippedMultiValue };
 }

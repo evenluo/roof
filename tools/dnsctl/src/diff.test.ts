@@ -20,6 +20,7 @@ describe("computeZoneDiff", () => {
     ]);
     expect(result.updates).toEqual([]);
     expect(result.deletes).toEqual([]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 
   test("detects records to delete", () => {
@@ -38,6 +39,7 @@ describe("computeZoneDiff", () => {
     expect(result.deletes).toEqual([
       { name: "old", type: "CNAME", value: "legacy.example.com", ttl: 300 },
     ]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 
   test("detects records to update", () => {
@@ -63,6 +65,7 @@ describe("computeZoneDiff", () => {
       },
     ]);
     expect(result.deletes).toEqual([]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 
   test("returns empty diff when records match", () => {
@@ -78,6 +81,7 @@ describe("computeZoneDiff", () => {
     expect(result.creates).toEqual([]);
     expect(result.updates).toEqual([]);
     expect(result.deletes).toEqual([]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 });
 
@@ -97,6 +101,7 @@ describe("computeZoneDiff type filtering", () => {
     expect(result.creates).toEqual([]);
     expect(result.updates).toEqual([]);
     expect(result.deletes).toEqual([]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 
   test("only deletes supported types from remote", () => {
@@ -111,20 +116,30 @@ describe("computeZoneDiff type filtering", () => {
     expect(result.deletes).toEqual([
       { name: "@", type: "A", value: "1.1.1.1", ttl: 600 },
     ]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 });
 
 describe("computeZoneDiff remote duplicates", () => {
-  test("throws on duplicate name+type in remote after filtering", () => {
-    const declared: NormalizedRecord[] = [];
+  test("excludes multi-value records and returns them in skippedMultiValue", () => {
+    const declared: NormalizedRecord[] = [
+      { name: "@", type: "A", value: "1.1.1.1", ttl: 600 },
+    ];
     const remote: NormalizedRecord[] = [
+      { name: "@", type: "A", value: "1.1.1.1", ttl: 600 },
       { name: "mail", type: "MX", value: "mx1.example.com.", ttl: 600 },
       { name: "mail", type: "MX", value: "mx2.example.com.", ttl: 600 },
     ];
 
-    expect(() => computeZoneDiff(declared, remote)).toThrow(
-      "Duplicate name+type in remote records: mail MX (2 records)",
-    );
+    const result = computeZoneDiff(declared, remote);
+
+    expect(result.creates).toEqual([]);
+    expect(result.updates).toEqual([]);
+    expect(result.deletes).toEqual([]);
+    expect(result.skippedMultiValue).toEqual([
+      { name: "mail", type: "MX", value: "mx1.example.com.", ttl: 600 },
+      { name: "mail", type: "MX", value: "mx2.example.com.", ttl: 600 },
+    ]);
   });
 
   test("does not throw when duplicates are in unsupported types only", () => {
@@ -139,6 +154,7 @@ describe("computeZoneDiff remote duplicates", () => {
     expect(result.creates).toEqual([]);
     expect(result.updates).toEqual([]);
     expect(result.deletes).toEqual([]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 });
 
@@ -162,6 +178,7 @@ describe("computeZoneDiff proxied comparison", () => {
         },
       },
     ]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 
   test("treats missing proxied as false on both sides", () => {
@@ -175,5 +192,6 @@ describe("computeZoneDiff proxied comparison", () => {
     const result = computeZoneDiff(declared, remote);
 
     expect(result.updates).toEqual([]);
+    expect(result.skippedMultiValue).toEqual([]);
   });
 });

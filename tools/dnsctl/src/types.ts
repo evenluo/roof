@@ -55,6 +55,7 @@ export interface ZonePlanResult {
   creates: NormalizedRecord[];
   updates: RecordUpdate[];
   deletes: NormalizedRecord[];
+  skippedMultiValue: NormalizedRecord[];
 }
 
 export interface ZonePlanError {

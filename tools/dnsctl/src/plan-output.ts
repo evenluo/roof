@@ -48,7 +48,7 @@ function formatPlanText(result: PlanResult): string {
       zone.updates.length > 0 ||
       zone.deletes.length > 0;
 
-    if (!hasChanges) {
+    if (!hasChanges && zone.skippedMultiValue.length === 0) {
       lines.push("  No changes");
       lines.push("");
       continue;
@@ -78,10 +78,21 @@ function formatPlanText(result: PlanResult): string {
       }
     }
 
-    lines.push("");
-    lines.push(
-      `  Summary: ${zone.creates.length} to create, ${zone.updates.length} to update, ${zone.deletes.length} to delete`,
-    );
+    if (zone.skippedMultiValue.length > 0) {
+      lines.push("");
+      lines.push("  Skipped (multi-value):");
+      for (const record of zone.skippedMultiValue) {
+        lines.push(formatRecordLine("?", record));
+      }
+    }
+
+    if (hasChanges) {
+      lines.push("");
+      lines.push(
+        `  Summary: ${zone.creates.length} to create, ${zone.updates.length} to update, ${zone.deletes.length} to delete`,
+      );
+    }
+
     lines.push("");
   }
 

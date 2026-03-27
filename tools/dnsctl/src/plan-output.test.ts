@@ -32,6 +32,7 @@ describe("formatPlanOutput text", () => {
           deletes: [
             { name: "old-api", type: "CNAME", value: "legacy.example.com", ttl: 300 },
           ],
+          skippedMultiValue: [],
         },
       },
     };
@@ -59,6 +60,7 @@ describe("formatPlanOutput text", () => {
           creates: [],
           updates: [],
           deletes: [],
+          skippedMultiValue: [],
         },
       },
     };
@@ -81,6 +83,7 @@ describe("formatPlanOutput text", () => {
           ],
           updates: [],
           deletes: [],
+          skippedMultiValue: [],
         },
       },
     };
@@ -88,6 +91,32 @@ describe("formatPlanOutput text", () => {
     const output = formatPlanOutput(plan, "text");
 
     expect(output).toContain("+ www  A  1.1.1.1  ttl=auto  proxied");
+  });
+
+  test("shows skipped multi-value records", () => {
+    const plan: PlanResult = {
+      ...basePlan,
+      zones: {
+        "ihongben.com": {
+          provider: "tencent",
+          creates: [],
+          updates: [],
+          deletes: [],
+          skippedMultiValue: [
+            { name: "_dnsauth", type: "TXT", value: "token-1", ttl: 600 },
+            { name: "_dnsauth", type: "TXT", value: "token-2", ttl: 600 },
+          ],
+        },
+      },
+    };
+
+    const output = formatPlanOutput(plan, "text");
+
+    expect(output).toContain("Zone: ihongben.com (tencent)");
+    expect(output).toContain("Skipped (multi-value):");
+    expect(output).toContain("? _dnsauth  TXT  token-1  ttl=600");
+    expect(output).toContain("? _dnsauth  TXT  token-2  ttl=600");
+    expect(output).not.toContain("Summary:");
   });
 
   test("shows error for zones with errors", () => {
@@ -128,6 +157,7 @@ describe("formatPlanOutput json", () => {
             },
           ],
           deletes: [],
+          skippedMultiValue: [],
         },
       },
     };

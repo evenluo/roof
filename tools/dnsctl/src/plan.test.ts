@@ -81,7 +81,9 @@ describe("runPlanCommand", () => {
     expect(parsed.zones["ihongben.com"].creates).toEqual([]);
     expect(parsed.zones["ihongben.com"].updates).toEqual([]);
     expect(parsed.zones["ihongben.com"].deletes).toEqual([]);
+    expect(parsed.zones["ihongben.com"].skippedMultiValue).toEqual([]);
     expect(parsed.zones["maxtap.net"].updates.length).toBe(1);
+    expect(parsed.zones["maxtap.net"].skippedMultiValue).toEqual([]);
   });
 
   test("filters to single zone with --zone", async () => {
@@ -141,24 +143,7 @@ describe("runPlanCommand", () => {
     );
   });
 
-  test("catches remote duplicate error and continues", async () => {
-    const mixedDeclaration: Declaration = {
-      zones: {
-        "ihongben.com": {
-          provider: "tencent",
-          records: [
-            { name: "@", type: "A", value: "2.2.2.2", ttl: 600 },
-          ],
-        },
-        "maxtap.net": {
-          provider: "cloudflare",
-          records: [
-            { name: "@", type: "A", value: "1.1.1.1", ttl: "auto", proxied: true },
-          ],
-        },
-      },
-    };
-
+  test("skips multi-value records without zone error", async () => {
     const remoteTencentWithDupes: NormalizedRecord[] = [
       { name: "mail", type: "MX", value: "mx1.example.com.", ttl: 600 },
       { name: "mail", type: "MX", value: "mx2.example.com.", ttl: 600 },
@@ -170,7 +155,7 @@ describe("runPlanCommand", () => {
       {
         config: baseConfig,
         now: () => "2026-03-27T15:00:00+08:00",
-        loadDeclaration: () => mixedDeclaration,
+        loadDeclaration: () => declaration,
         inspectCloudflareZone: async () => remoteCloudflare,
         inspectTencentZone: async () => remoteTencentWithDupes,
       },
@@ -178,7 +163,17 @@ describe("runPlanCommand", () => {
 
     const parsed = JSON.parse(output);
 
-    expect(parsed.zones["ihongben.com"].error).toContain("Duplicate name+type");
+    // No error on the zone
+    expect(parsed.zones["ihongben.com"].error).toBeUndefined();
+    // Multi-value records are in skippedMultiValue
+    expect(parsed.zones["ihongben.com"].skippedMultiValue).toEqual([
+      { name: "mail", type: "MX", value: "mx1.example.com.", ttl: 600 },
+      { name: "mail", type: "MX", value: "mx2.example.com.", ttl: 600 },
+    ]);
+    // Normal records still diffed correctly
+    expect(parsed.zones["ihongben.com"].creates).toEqual([]);
+    expect(parsed.zones["ihongben.com"].deletes).toEqual([]);
+    // Other zone still works
     expect(parsed.zones["maxtap.net"].updates.length).toBe(1);
   });
 });
