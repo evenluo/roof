@@ -58,6 +58,7 @@
   tools/
     dnsctl/
       package.json
+      tsconfig.json
       .gitignore
       .env.example
       src/
@@ -103,11 +104,18 @@ bun run inspect
 
 ### 5.3 可选参数
 
-第一阶段仅保留一个可选参数：
+第一阶段保留两个可选参数：
 
 - `--json`：输出 JSON
+- `--zone <name>`：仅查询单个根域名
 
-默认行为保持为 YAML 输出。
+默认行为保持为 YAML 输出，并查询当前已配置的全部 zone。
+
+`--zone` 的作用边界：
+
+- 仅影响本次执行的查询范围
+- 与 fail-fast 策略兼容，含义为“对选中的 zone fail-fast”
+- 不改变默认的“全量查询两个 zone”行为
 
 ## 6. 数据来源与密钥管理
 
@@ -115,8 +123,15 @@ bun run inspect
 
 第一阶段查询的数据来源固定为对应 provider 的远端 API：
 
-- `ihongben.com` -> 腾讯云 DNSPod API
+- `ihongben.com` -> 腾讯云 DNSPod API 3.0
 - `maxtap.net` -> Cloudflare API
+
+API 版本决策：
+
+- 腾讯云明确使用 `dnspod.tencentcloudapi.com`
+- 腾讯云 API 版本固定为 `2021-03-23`
+- 不使用旧版 DNSPod 独立 API
+- Cloudflare 使用 v4 REST API
 
 ### 6.2 密钥来源
 
@@ -157,7 +172,7 @@ zones:
       - name: "@"
         type: A
         value: 5.6.7.8
-        ttl: 1
+        ttl: auto
         proxied: true
 ```
 
@@ -173,6 +188,12 @@ zones:
 Cloudflare 额外保留：
 
 - `proxied`
+
+`ttl` 字段语义：
+
+- 腾讯云输出数值秒数
+- Cloudflare 若返回 `1`，表示 Automatic TTL，标准化输出为 `auto`
+- Cloudflare 其他值保持为数值秒数
 
 ### 7.3 记录命名规则
 
@@ -224,6 +245,22 @@ Cloudflare 额外保留：
 - 腾讯云：第一阶段只处理默认线路，不表达复杂线路差异
 - 不保留 provider 原始响应中的无关元数据，如记录 ID、创建时间、更新时间等
 
+### 8.4 分页策略
+
+第一阶段会自动遍历分页，直到取完整个 zone 的记录列表。
+
+分页决策：
+
+- Cloudflare：使用分页参数遍历全部页，不只取第一页
+- 腾讯云 DNSPod：使用 `Offset + Limit` 方式遍历，直到取完全部记录
+- 第一阶段不把“记录数量较少”作为前提假设
+
+这样处理的原因是：
+
+- Cloudflare 列表接口默认分页
+- 腾讯云 DNSPod `DescribeRecordList` 默认返回 100 条，最大 3000 条
+- 查询结果要作为后续声明式配置的现状基线，不能默默截断
+
 ## 9. 错误处理
 
 第一阶段采用 fail-fast 策略，但错误信息必须带上下文。
@@ -253,6 +290,11 @@ Failed to inspect zone "ihongben.com" from provider "tencent": authentication fa
 - 不跳过失败 zone 后继续返回残缺结果
 - 不自动切换到其他 provider
 - 不做 fallback
+
+补充说明：
+
+- 默认查询全部 zone 时，只要任一 zone 失败，命令整体失败
+- 若显式指定 `--zone <name>`，则只对该 zone 执行 fail-fast
 
 ## 10. 兼容性决策
 
