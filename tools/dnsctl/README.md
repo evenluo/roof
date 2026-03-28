@@ -143,7 +143,26 @@ bun tools/dnsctl/src/index.ts import --zone example.com
 bun tools/dnsctl/src/index.ts import --output path/to/output.yaml
 ```
 
+> `--force`：默认情况下文件已存在时会报错退出，防止意外覆盖。`--force` 表示明确知道会覆盖并继续。适用场景：远端被外部手动修改后，想重新拉取当前状态作为新基线。
+
 > 不支持的记录类型（如 NS、SOA）会被自动过滤，不写入文件。
+
+---
+
+## Makefile
+
+在 `tools/dnsctl/` 目录下可直接使用 `make`，依赖变化时自动执行 `bun install`。
+
+```bash
+cd tools/dnsctl
+
+make plan                        # 预览所有 zone
+make plan zone=maxtap.net        # 预览单个 zone
+make apply                       # 应用所有 zone
+make apply zone=ihongben.com     # 应用单个 zone
+make inspect                     # 查询远端状态
+make import                      # 生成声明文件（文件已存在时报错）
+```
 
 ---
 
@@ -152,21 +171,21 @@ bun tools/dnsctl/src/index.ts import --output path/to/output.yaml
 **日常改动：**
 
 ```
-编辑 dns/dns.yaml
+编辑 tools/dnsctl/dns/dns.yaml
     ↓
-bun tools/dnsctl/src/index.ts plan    # 确认变更符合预期
+make plan    # 确认变更符合预期
     ↓
-bun tools/dnsctl/src/index.ts apply   # 执行
+make apply   # 执行
 ```
 
 **首次接管已有域名：**
 
 ```
-bun tools/dnsctl/src/index.ts import   # 生成初始 dns.yaml
+make import              # 生成初始 dns.yaml
     ↓
 检查并清理生成的文件
     ↓
-bun tools/dnsctl/src/index.ts plan     # 确认 no changes（基线一致）
+make plan                # 确认 no changes（基线一致）
 ```
 
 ---
