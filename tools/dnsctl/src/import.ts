@@ -7,6 +7,7 @@ import { loadRuntimeConfig, type AppConfig } from "./config";
 import type { Declaration } from "./declaration";
 import { inspectCloudflareZone } from "./providers/cloudflare";
 import { inspectTencentZone } from "./providers/tencent";
+import { SUPPORTED_RECORD_TYPES } from "./types";
 import type { FetchLike, NormalizedRecord } from "./types";
 
 interface ImportDependencies {
@@ -83,7 +84,10 @@ export async function runImportCommand(
       );
     }
 
-    declaration.zones[zoneName] = { provider: zone.provider, records };
+    const supported = records.filter((r) =>
+      SUPPORTED_RECORD_TYPES.includes(r.type as (typeof SUPPORTED_RECORD_TYPES)[number]),
+    );
+    declaration.zones[zoneName] = { provider: zone.provider, records: supported };
   }
 
   const yaml = dumpYaml(declaration);

@@ -1,0 +1,59 @@
+zones:
+  ihongben.com:
+    provider: tencent
+    records:
+      - name: _71da75a6fdc8114d694b26d592952df5
+        type: CNAME
+        value: >-
+          5e391815205f6a0cf3de7aedcb0a0cf1.a6cfa169493dc9f3037ff0353291bcb2.cmcdt3ffocsjvu.trust-provider.com.
+        ttl: 600
+      - name: _dnsauth
+        type: TXT
+        value: 2026031400114827wjxa574hbxl4pzxagv0evvnicjqajwdjmsn13swgoqwwklri
+        ttl: 600
+      - name: '@'
+        type: A
+        value: 119.29.142.135
+        ttl: 600
+      - name: www
+        type: A
+        value: 119.29.142.135
+        ttl: 600
+  maxtap.net:
+    provider: cloudflare
+    records:
+      - name: _dnsauth.edge-jp
+        type: TXT
+        value: '"202512070231233hga4dlpvvtakicgn4ek4qb7d1q4bt0mf52pigr1eiws6zxhig"'
+        ttl: auto
+        proxied: false
+      - name: _dnsauth.edge-sg
+        type: TXT
+        value: '"202512031432014jqchyjct9meveoscdr0aev9nwu89uyai6pmvxuaoij9wz3l0z"'
+        ttl: auto
+        proxied: false
+      - name: _dnsauth.edge-us
+        type: TXT
+        value: '"202512111428102wdr8zzgrlogudxzyc6kppnqdc0qa5zsydy1g5qbhmdrrqe30b"'
+        ttl: auto
+        proxied: false
+      - name: dokploy
+        type: A
+        value: 43.167.225.128
+        ttl: auto
+        proxied: true
+      - name: edge-sg
+        type: A
+        value: 43.160.240.184
+        ttl: auto
+        proxied: false
+      - name: edge-us
+        type: A
+        value: 43.162.108.62
+        ttl: auto
+        proxied: false
+      - name: sub2api
+        type: A
+        value: 43.167.225.128
+        ttl: auto
+        proxied: true
