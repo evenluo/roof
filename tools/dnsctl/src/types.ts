@@ -28,6 +28,16 @@ export interface TencentRecord {
   TTL: number;
 }
 
+export interface TencentManagedRecord {
+  recordId: number;
+  name: string;
+  type: string;
+  value: string;
+  ttl: number;
+  line: string;
+  updatedOn: string;
+}
+
 export const SUPPORTED_RECORD_TYPES = [
   "A",
   "AAAA",

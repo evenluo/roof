@@ -1,7 +1,12 @@
 import { createHash, createHmac } from "node:crypto";
 
 import { normalizeRecordCollection, normalizeTencentRecord } from "../normalize/records";
-import type { FetchLike, NormalizedRecord, TencentRecord } from "../types";
+import type {
+  FetchLike,
+  NormalizedRecord,
+  TencentManagedRecord,
+  TencentRecord,
+} from "../types";
 
 const DNSPOD_ENDPOINT = "https://dnspod.tencentcloudapi.com/";
 const DNSPOD_HOST = "dnspod.tencentcloudapi.com";
@@ -20,6 +25,27 @@ interface TencentRecordListResponse {
       ListCount: number;
     };
     RecordList: Array<TencentRecord & { Line?: string }>;
+    RequestId: string;
+  };
+}
+
+interface TencentManagedRecordListResponse {
+  Response: {
+    Error?: {
+      Code: string;
+      Message: string;
+    };
+    RecordCountInfo: {
+      TotalCount: number;
+      ListCount: number;
+    };
+    RecordList: Array<
+      TencentRecord & {
+        RecordId: number;
+        Line?: string;
+        UpdatedOn: string;
+      }
+    >;
     RequestId: string;
   };
 }
@@ -122,6 +148,75 @@ async function callTencentApi<ResponsePayload>(options: {
   }
 
   return responsePayload;
+}
+
+export async function listTencentManagedRecords(options: {
+  secretId: string;
+  secretKey: string;
+  zoneName: string;
+  subdomain: string;
+  recordType: string;
+  fetchImpl?: FetchLike;
+}): Promise<TencentManagedRecord[]> {
+  const records: TencentManagedRecord[] = [];
+  let offset = 0;
+  let totalCount = Number.POSITIVE_INFINITY;
+
+  while (offset < totalCount) {
+    const payload = await callTencentApi<TencentManagedRecordListResponse>({
+      secretId: options.secretId,
+      secretKey: options.secretKey,
+      action: "DescribeRecordList",
+      body: {
+        Domain: options.zoneName,
+        Subdomain: options.subdomain,
+        RecordType: options.recordType,
+        Offset: offset,
+        Limit: 100,
+        SortField: "updated_on",
+        SortType: "DESC",
+      },
+      fetchImpl: options.fetchImpl,
+    });
+
+    records.push(
+      ...payload.Response.RecordList.filter((record) =>
+        DEFAULT_LINE_NAMES.has(record.Line ?? ""),
+      ).map((record) => ({
+        recordId: record.RecordId,
+        name: record.Name,
+        type: record.Type,
+        value: record.Value,
+        ttl: record.TTL,
+        line: record.Line ?? "",
+        updatedOn: record.UpdatedOn,
+      })),
+    );
+
+    totalCount = payload.Response.RecordCountInfo.TotalCount;
+    offset += payload.Response.RecordCountInfo.ListCount;
+  }
+
+  return records;
+}
+
+export async function deleteTencentRecord(options: {
+  secretId: string;
+  secretKey: string;
+  zoneName: string;
+  recordId: number;
+  fetchImpl?: FetchLike;
+}): Promise<void> {
+  await callTencentApi({
+    secretId: options.secretId,
+    secretKey: options.secretKey,
+    action: "DeleteRecord",
+    body: {
+      Domain: options.zoneName,
+      RecordId: options.recordId,
+    },
+    fetchImpl: options.fetchImpl,
+  });
 }
 
 export async function inspectTencentZone(options: {
