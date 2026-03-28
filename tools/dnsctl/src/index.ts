@@ -1,6 +1,7 @@
 import { parseCliArgs, getUsageText } from "./cli";
 import { loadRuntimeConfig, type AppConfig } from "./config";
 import { runApplyCommand } from "./apply";
+import { runImportCommand } from "./import";
 import { runPlanCommand } from "./plan";
 import { formatInspectOutput } from "./output";
 import { inspectCloudflareZone } from "./providers/cloudflare";
@@ -99,6 +100,8 @@ async function main(argv: string[]): Promise<void> {
   } else if (cliArgs.command === "plan") {
     const output = await runPlanCommand(cliArgs);
     console.log(output);
+  } else if (cliArgs.command === "import") {
+    await runImportCommand(cliArgs);
   } else {
     const { output, hasErrors } = await runApplyCommand(cliArgs);
     console.log(output);

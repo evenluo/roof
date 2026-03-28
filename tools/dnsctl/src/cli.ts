@@ -2,7 +2,7 @@ import { SUPPORTED_ZONES } from "./config";
 
 export interface HelpCliArgs {
   command: "help";
-  topic?: "inspect" | "plan" | "apply";
+  topic?: "inspect" | "plan" | "apply" | "import";
 }
 
 export interface InspectCliArgs {
@@ -25,13 +25,22 @@ export interface ApplyCliArgs {
   zone?: string;
 }
 
-export type CliArgs = HelpCliArgs | InspectCliArgs | PlanCliArgs | ApplyCliArgs;
+export interface ImportCliArgs {
+  command: "import";
+  output: string;
+  zone?: string;
+  force: boolean;
+}
+
+export type CliArgs = HelpCliArgs | InspectCliArgs | PlanCliArgs | ApplyCliArgs | ImportCliArgs;
 
 const USAGE = `Usage: dnsctl <command> [options]
 
 Commands:
   inspect   Query remote DNS records
   plan      Compare declaration file against remote DNS
+  apply     Apply declaration file to remote DNS
+  import    Generate declaration file from current remote DNS state
 
 Options:
   --help, -h  Show help
@@ -66,6 +75,16 @@ Options:
   --zone <name>  Apply a single zone
   --json         Output as JSON (default: text)
   --help, -h     Show help`;
+
+const IMPORT_USAGE = `Usage: dnsctl import [options]
+
+Generate a declaration file from current remote DNS state.
+
+Options:
+  --output <path>  Output file path (default: dns/dns.yaml)
+  --zone <name>    Import a single zone
+  --force          Overwrite existing file
+  --help, -h       Show help`;
 
 function ensureSupportedZone(zone: string): string {
   if (!SUPPORTED_ZONES.includes(zone as (typeof SUPPORTED_ZONES)[number])) {
@@ -208,6 +227,53 @@ function parseApplyArgs(rest: string[]): ApplyCliArgs | HelpCliArgs {
   return parsed;
 }
 
+function parseImportArgs(rest: string[]): ImportCliArgs | HelpCliArgs {
+  if (rest.length > 0 && isHelpFlag(rest[0])) {
+    return { command: "help", topic: "import" };
+  }
+
+  const parsed: ImportCliArgs = {
+    command: "import",
+    output: "dns/dns.yaml",
+    force: false,
+  };
+
+  for (let index = 0; index < rest.length; index += 1) {
+    const current = rest[index];
+
+    if (current === "--force") {
+      parsed.force = true;
+      continue;
+    }
+
+    if (current === "--zone") {
+      const zone = rest[index + 1];
+      if (!zone) {
+        throw new Error("Missing value for --zone");
+      }
+
+      parsed.zone = ensureSupportedZone(zone);
+      index += 1;
+      continue;
+    }
+
+    if (current === "--output") {
+      const output = rest[index + 1];
+      if (!output) {
+        throw new Error("Missing value for --output");
+      }
+
+      parsed.output = output;
+      index += 1;
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${current}`);
+  }
+
+  return parsed;
+}
+
 export function parseCliArgs(argv: string[]): CliArgs {
   const [command, ...rest] = argv;
 
@@ -227,12 +293,17 @@ export function parseCliArgs(argv: string[]): CliArgs {
     return parseApplyArgs(rest);
   }
 
+  if (command === "import") {
+    return parseImportArgs(rest);
+  }
+
   throw new Error(`Unknown command: ${command}`);
 }
 
-export function getUsageText(topic?: "inspect" | "plan" | "apply"): string {
+export function getUsageText(topic?: "inspect" | "plan" | "apply" | "import"): string {
   if (topic === "inspect") return INSPECT_USAGE;
   if (topic === "plan") return PLAN_USAGE;
   if (topic === "apply") return APPLY_USAGE;
+  if (topic === "import") return IMPORT_USAGE;
   return USAGE;
 }
