@@ -78,3 +78,29 @@ export interface PlanResult {
   generatedAt: string;
   zones: Record<string, ZonePlanResult | ZonePlanError>;
 }
+
+export interface ApplyError {
+  operation: "create" | "update" | "delete";
+  record: NormalizedRecord;
+  error: string;
+}
+
+export interface ZoneApplyResult {
+  provider: Provider;
+  created: NormalizedRecord[];
+  updated: RecordUpdate[];
+  deleted: NormalizedRecord[];
+  skippedMultiValue: NormalizedRecord[];
+  errors: ApplyError[];
+}
+
+export interface ZoneApplyError {
+  provider: Provider;
+  error: string;
+}
+
+export interface ApplyResult {
+  file: string;
+  generatedAt: string;
+  zones: Record<string, ZoneApplyResult | ZoneApplyError>;
+}

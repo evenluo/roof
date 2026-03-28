@@ -1,5 +1,6 @@
-import { parseCliArgs } from "./cli";
+import { parseCliArgs, getUsageText } from "./cli";
 import { loadRuntimeConfig, type AppConfig } from "./config";
+import { runApplyCommand } from "./apply";
 import { runPlanCommand } from "./plan";
 import { formatInspectOutput } from "./output";
 import { inspectCloudflareZone } from "./providers/cloudflare";
@@ -87,12 +88,23 @@ export async function runInspectCommand(
 async function main(argv: string[]): Promise<void> {
   const cliArgs = parseCliArgs(argv);
 
+  if (cliArgs.command === "help") {
+    console.log(getUsageText(cliArgs.topic));
+    return;
+  }
+
   if (cliArgs.command === "inspect") {
     const output = await runInspectCommand(cliArgs);
     console.log(output);
-  } else {
+  } else if (cliArgs.command === "plan") {
     const output = await runPlanCommand(cliArgs);
     console.log(output);
+  } else {
+    const { output, hasErrors } = await runApplyCommand(cliArgs);
+    console.log(output);
+    if (hasErrors) {
+      process.exit(1);
+    }
   }
 }
 
