@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - 'dns/dns.yaml'
+      - 'tools/dnsctl/dns/dns.yaml'
   workflow_dispatch:
     inputs:
       zone:
@@ -41,7 +41,7 @@ jobs:
           ZONE_INPUT: ${{ github.event.inputs.zone }}
         run: |
           if [ -n "$ZONE_INPUT" ]; then
-            bun tools/dnsctl/src/index.ts apply --file dns/dns.yaml --zone "$ZONE_INPUT"
+            bun tools/dnsctl/src/index.ts apply --file tools/dnsctl/dns/dns.yaml --zone "$ZONE_INPUT"
           else
-            bun tools/dnsctl/src/index.ts apply --file dns/dns.yaml
+            bun tools/dnsctl/src/index.ts apply --file tools/dnsctl/dns/dns.yaml
           fi

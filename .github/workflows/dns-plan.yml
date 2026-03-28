@@ -3,7 +3,7 @@ name: DNS Plan
 on:
   pull_request:
     paths:
-      - 'dns/dns.yaml'
+      - 'tools/dnsctl/dns/dns.yaml'
 
 jobs:
   plan:
@@ -26,7 +26,7 @@ jobs:
         # 多行输出写入 $GITHUB_ENV（heredoc 语法），单行 exit_code 写入 $GITHUB_OUTPUT 供 if 条件使用。
         run: |
           set +e
-          OUTPUT=$(bun tools/dnsctl/src/index.ts plan --file dns/dns.yaml 2>&1)
+          OUTPUT=$(bun tools/dnsctl/src/index.ts plan --file tools/dnsctl/dns/dns.yaml 2>&1)
           EXIT_CODE=$?
           {
             echo "PLAN_OUTPUT<<__PLAN_EOF__"
