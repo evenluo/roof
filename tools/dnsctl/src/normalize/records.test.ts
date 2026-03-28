@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  denormalizeRecordName,
   normalizeCloudflareRecord,
   normalizeRecordCollection,
   normalizeTencentRecord,
@@ -59,6 +60,20 @@ describe("normalizeTencentRecord", () => {
       value: "mail.example.com.",
       ttl: 600,
     });
+  });
+});
+
+describe("denormalizeRecordName", () => {
+  test("converts @ to zone apex", () => {
+    expect(denormalizeRecordName("maxtap.net", "@")).toBe("maxtap.net");
+  });
+
+  test("converts subdomain to FQDN", () => {
+    expect(denormalizeRecordName("maxtap.net", "www")).toBe("www.maxtap.net");
+  });
+
+  test("converts nested subdomain to FQDN", () => {
+    expect(denormalizeRecordName("maxtap.net", "api.v2")).toBe("api.v2.maxtap.net");
   });
 });
 

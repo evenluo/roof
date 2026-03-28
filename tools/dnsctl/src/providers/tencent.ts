@@ -219,6 +219,99 @@ export async function deleteTencentRecord(options: {
   });
 }
 
+export async function fetchTencentZoneWithIds(options: {
+  secretId: string;
+  secretKey: string;
+  zoneName: string;
+  fetchImpl?: FetchLike;
+}): Promise<TencentManagedRecord[]> {
+  const records: TencentManagedRecord[] = [];
+  let offset = 0;
+  let totalCount = Number.POSITIVE_INFINITY;
+
+  while (offset < totalCount) {
+    const payload = await callTencentApi<TencentManagedRecordListResponse>({
+      secretId: options.secretId,
+      secretKey: options.secretKey,
+      action: "DescribeRecordList",
+      body: {
+        Domain: options.zoneName,
+        Offset: offset,
+        Limit: 100,
+      },
+      fetchImpl: options.fetchImpl,
+    });
+
+    records.push(
+      ...payload.Response.RecordList.filter((record) =>
+        DEFAULT_LINE_NAMES.has(record.Line ?? ""),
+      ).map((record) => ({
+        recordId: record.RecordId,
+        name: record.Name,
+        type: record.Type,
+        value: record.Value,
+        ttl: record.TTL,
+        line: record.Line ?? "",
+        updatedOn: record.UpdatedOn,
+      })),
+    );
+
+    totalCount = payload.Response.RecordCountInfo.TotalCount;
+    offset += payload.Response.RecordCountInfo.ListCount;
+  }
+
+  return records;
+}
+
+export async function createTencentRecord(options: {
+  secretId: string;
+  secretKey: string;
+  zoneName: string;
+  record: NormalizedRecord;
+  fetchImpl?: FetchLike;
+}): Promise<void> {
+  await callTencentApi({
+    secretId: options.secretId,
+    secretKey: options.secretKey,
+    action: "CreateRecord",
+    body: {
+      Domain: options.zoneName,
+      SubDomain: options.record.name,
+      RecordType: options.record.type,
+      Value: options.record.value,
+      TTL: options.record.ttl,
+      RecordLine: "默认",
+    },
+    fetchImpl: options.fetchImpl,
+  });
+}
+
+export async function modifyTencentRecord(options: {
+  secretId: string;
+  secretKey: string;
+  zoneName: string;
+  recordId: number;
+  line: string;
+  record: NormalizedRecord;
+  fetchImpl?: FetchLike;
+}): Promise<void> {
+  await callTencentApi({
+    secretId: options.secretId,
+    secretKey: options.secretKey,
+    action: "ModifyRecord",
+    body: {
+      Domain: options.zoneName,
+      RecordId: options.recordId,
+      SubDomain: options.record.name,
+      RecordType: options.record.type,
+      Value: options.record.value,
+      TTL: options.record.ttl,
+      RecordLine: options.line,
+    },
+    fetchImpl: options.fetchImpl,
+  });
+}
+
 export async function inspectTencentZone(options: {
   secretId: string;
   secretKey: string;

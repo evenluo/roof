@@ -2,7 +2,14 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { FetchLike } from "../types";
 
-import { deleteTencentRecord, inspectTencentZone, listTencentManagedRecords } from "./tencent";
+import {
+  createTencentRecord,
+  deleteTencentRecord,
+  fetchTencentZoneWithIds,
+  inspectTencentZone,
+  listTencentManagedRecords,
+  modifyTencentRecord,
+} from "./tencent";
 
 const originalDateNow = Date.now;
 
@@ -261,5 +268,155 @@ describe("inspectTencentZone", () => {
         },
       },
     ]);
+  });
+
+  test("fetches all zone records with ids and line info", async () => {
+    const fetchImpl: FetchLike = async (_input, init) => {
+      const action = new Headers(init?.headers).get("X-TC-Action");
+      const body = JSON.parse(String(init?.body));
+
+      if (action !== "DescribeRecordList") throw new Error("unexpected action");
+
+      // Should not filter by subdomain or recordType
+      expect(body.Subdomain).toBeUndefined();
+      expect(body.RecordType).toBeUndefined();
+
+      return new Response(
+        JSON.stringify({
+          Response: {
+            RecordCountInfo: { TotalCount: 2, ListCount: 2 },
+            RecordList: [
+              {
+                RecordId: 11,
+                Name: "@",
+                Type: "A",
+                Value: "1.2.3.4",
+                TTL: 600,
+                Line: "默认",
+                UpdatedOn: "2026-01-01 00:00:00",
+              },
+              {
+                RecordId: 22,
+                Name: "mail",
+                Type: "MX",
+                Value: "mx.example.com.",
+                TTL: 600,
+                Line: "默认",
+                UpdatedOn: "2026-01-02 00:00:00",
+              },
+            ],
+            RequestId: "req-ids",
+          },
+        }),
+        { status: 200 },
+      );
+    };
+
+    const records = await fetchTencentZoneWithIds({
+      secretId: "secret-id",
+      secretKey: "secret-key",
+      zoneName: "ihongben.com",
+      fetchImpl,
+    });
+
+    expect(records).toHaveLength(2);
+    expect(records[0]).toMatchObject({ recordId: 11, name: "@", type: "A", line: "默认" });
+    expect(records[1]).toMatchObject({ recordId: 22, name: "mail", type: "MX" });
+  });
+
+  test("creates a record with default line", async () => {
+    const requests: Array<{ action: string | null; body: Record<string, unknown> }> = [];
+
+    const fetchImpl: FetchLike = async (_input, init) => {
+      const action = new Headers(init?.headers).get("X-TC-Action");
+      const body = JSON.parse(String(init?.body));
+      requests.push({ action, body });
+
+      return new Response(
+        JSON.stringify({ Response: { RecordId: 999, RequestId: "req-create" } }),
+        { status: 200 },
+      );
+    };
+
+    await createTencentRecord({
+      secretId: "secret-id",
+      secretKey: "secret-key",
+      zoneName: "ihongben.com",
+      record: { name: "www", type: "A", value: "1.2.3.4", ttl: 600 },
+      fetchImpl,
+    });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.action).toBe("CreateRecord");
+    expect(requests[0]?.body).toMatchObject({
+      Domain: "ihongben.com",
+      SubDomain: "www",
+      RecordType: "A",
+      Value: "1.2.3.4",
+      TTL: 600,
+      RecordLine: "默认",
+    });
+  });
+
+  test("creates a root record using @ as subdomain", async () => {
+    const requests: Array<{ action: string | null; body: Record<string, unknown> }> = [];
+
+    const fetchImpl: FetchLike = async (_input, init) => {
+      const action = new Headers(init?.headers).get("X-TC-Action");
+      const body = JSON.parse(String(init?.body));
+      requests.push({ action, body });
+
+      return new Response(
+        JSON.stringify({ Response: { RecordId: 1000, RequestId: "req-create-root" } }),
+        { status: 200 },
+      );
+    };
+
+    await createTencentRecord({
+      secretId: "secret-id",
+      secretKey: "secret-key",
+      zoneName: "ihongben.com",
+      record: { name: "@", type: "A", value: "5.6.7.8", ttl: 300 },
+      fetchImpl,
+    });
+
+    expect(requests[0]?.body).toMatchObject({ SubDomain: "@" });
+  });
+
+  test("modifies a record by record id", async () => {
+    const requests: Array<{ action: string | null; body: Record<string, unknown> }> = [];
+
+    const fetchImpl: FetchLike = async (_input, init) => {
+      const action = new Headers(init?.headers).get("X-TC-Action");
+      const body = JSON.parse(String(init?.body));
+      requests.push({ action, body });
+
+      return new Response(
+        JSON.stringify({ Response: { RecordId: 303, RequestId: "req-modify" } }),
+        { status: 200 },
+      );
+    };
+
+    await modifyTencentRecord({
+      secretId: "secret-id",
+      secretKey: "secret-key",
+      zoneName: "ihongben.com",
+      recordId: 303,
+      line: "默认",
+      record: { name: "mail", type: "MX", value: "mail2.example.com.", ttl: 300 },
+      fetchImpl,
+    });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.action).toBe("ModifyRecord");
+    expect(requests[0]?.body).toMatchObject({
+      Domain: "ihongben.com",
+      RecordId: 303,
+      SubDomain: "mail",
+      RecordType: "MX",
+      Value: "mail2.example.com.",
+      TTL: 300,
+      RecordLine: "默认",
+    });
   });
 });

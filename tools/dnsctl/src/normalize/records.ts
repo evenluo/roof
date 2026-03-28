@@ -4,6 +4,11 @@ import type {
   TencentRecord,
 } from "../types";
 
+export function denormalizeRecordName(zoneName: string, normalizedName: string): string {
+  if (normalizedName === "@") return zoneName;
+  return `${normalizedName}.${zoneName}`;
+}
+
 function normalizeRecordName(zoneName: string, recordName: string): string {
   if (recordName === zoneName) {
     return "@";
