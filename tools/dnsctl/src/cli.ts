@@ -61,7 +61,7 @@ const PLAN_USAGE = `Usage: dnsctl plan [options]
 Compare a YAML declaration file against remote DNS and show a diff.
 
 Options:
-  --file <path>  Declaration file path (default: dns/dns.yaml)
+  --file <path>  Declaration file path (default: tools/dnsctl/dns/dns.yaml)
   --zone <name>  Plan a single zone
   --json         Output as JSON (default: text)
   --help, -h     Show help`;
@@ -71,7 +71,7 @@ const APPLY_USAGE = `Usage: dnsctl apply [options]
 Apply a YAML declaration file to remote DNS (create, update, delete records).
 
 Options:
-  --file <path>  Declaration file path (default: dns/dns.yaml)
+  --file <path>  Declaration file path (default: tools/dnsctl/dns/dns.yaml)
   --zone <name>  Apply a single zone
   --json         Output as JSON (default: text)
   --help, -h     Show help`;
@@ -81,7 +81,7 @@ const IMPORT_USAGE = `Usage: dnsctl import [options]
 Generate a declaration file from current remote DNS state.
 
 Options:
-  --output <path>  Output file path (default: dns/dns.yaml)
+  --output <path>  Output file path (default: tools/dnsctl/dns/dns.yaml)
   --zone <name>    Import a single zone
   --force          Overwrite existing file
   --help, -h       Show help`;
@@ -141,7 +141,7 @@ function parsePlanArgs(rest: string[]): PlanCliArgs | HelpCliArgs {
   const parsed: PlanCliArgs = {
     command: "plan",
     format: "text",
-    file: "dns/dns.yaml",
+    file: "tools/dnsctl/dns/dns.yaml",
   };
 
   for (let index = 0; index < rest.length; index += 1) {
@@ -188,7 +188,7 @@ function parseApplyArgs(rest: string[]): ApplyCliArgs | HelpCliArgs {
   const parsed: ApplyCliArgs = {
     command: "apply",
     format: "text",
-    file: "dns/dns.yaml",
+    file: "tools/dnsctl/dns/dns.yaml",
   };
 
   for (let index = 0; index < rest.length; index += 1) {
@@ -234,7 +234,7 @@ function parseImportArgs(rest: string[]): ImportCliArgs | HelpCliArgs {
 
   const parsed: ImportCliArgs = {
     command: "import",
-    output: "dns/dns.yaml",
+    output: "tools/dnsctl/dns/dns.yaml",
     force: false,
   };
 

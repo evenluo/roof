@@ -78,7 +78,7 @@ describe("parseCliArgs plan", () => {
     expect(parseCliArgs(["plan"])).toEqual({
       command: "plan",
       format: "text",
-      file: "dns/dns.yaml",
+      file: "tools/dnsctl/dns/dns.yaml",
     });
   });
 
@@ -86,7 +86,7 @@ describe("parseCliArgs plan", () => {
     expect(parseCliArgs(["plan", "--json"])).toEqual({
       command: "plan",
       format: "json",
-      file: "dns/dns.yaml",
+      file: "tools/dnsctl/dns/dns.yaml",
     });
   });
 
@@ -102,7 +102,7 @@ describe("parseCliArgs plan", () => {
     expect(parseCliArgs(["plan", "--zone", "maxtap.net"])).toEqual({
       command: "plan",
       format: "text",
-      file: "dns/dns.yaml",
+      file: "tools/dnsctl/dns/dns.yaml",
       zone: "maxtap.net",
     });
   });
@@ -131,7 +131,7 @@ describe("parseCliArgs apply", () => {
     expect(parseCliArgs(["apply"])).toEqual({
       command: "apply",
       format: "text",
-      file: "dns/dns.yaml",
+      file: "tools/dnsctl/dns/dns.yaml",
     });
   });
 
@@ -139,7 +139,7 @@ describe("parseCliArgs apply", () => {
     expect(parseCliArgs(["apply", "--json"])).toEqual({
       command: "apply",
       format: "json",
-      file: "dns/dns.yaml",
+      file: "tools/dnsctl/dns/dns.yaml",
     });
   });
 
@@ -155,7 +155,7 @@ describe("parseCliArgs apply", () => {
     expect(parseCliArgs(["apply", "--zone", "maxtap.net"])).toEqual({
       command: "apply",
       format: "text",
-      file: "dns/dns.yaml",
+      file: "tools/dnsctl/dns/dns.yaml",
       zone: "maxtap.net",
     });
   });
