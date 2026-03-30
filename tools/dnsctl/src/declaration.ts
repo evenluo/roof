@@ -90,10 +90,10 @@ function validateZone(zoneName: string, raw: unknown): DeclaredZone {
 
   if (
     typeof zone.provider !== "string" ||
-    !["cloudflare", "tencent"].includes(zone.provider)
+    !["cloudflare", "tencent", "aliyun"].includes(zone.provider)
   ) {
     throw new Error(
-      `Zone "${zoneName}": provider must be "cloudflare" or "tencent"`,
+      `Zone "${zoneName}": provider must be "cloudflare", "tencent" or "aliyun"`,
     );
   }
 

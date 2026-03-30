@@ -67,7 +67,15 @@ zones:
     records: []
   junlintianxia.icu:
     provider: aliyun
-    records: []
+    records:
+      - name: '@'
+        type: A
+        value: 81.71.34.171
+        ttl: 600
+      - name: www
+        type: A
+        value: 81.71.34.171
+        ttl: 600
   junlintianxia.top:
     provider: aliyun
     records:

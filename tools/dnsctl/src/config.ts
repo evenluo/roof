@@ -63,6 +63,6 @@ export function loadConfig(
 }
 
 export function loadRuntimeConfig(): AppConfig {
-  loadDotenv({ path: ".env.local", quiet: true });
+  loadDotenv({ path: "tools/dnsctl/.env.local", quiet: true });
   return loadConfig(process.env);
 }
