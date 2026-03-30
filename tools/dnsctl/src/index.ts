@@ -4,9 +4,10 @@ import { runApplyCommand } from "./apply";
 import { runImportCommand } from "./import";
 import { runPlanCommand } from "./plan";
 import { formatInspectOutput } from "./output";
+import { inspectAliyunZone } from "./providers/aliyun";
 import { inspectCloudflareZone } from "./providers/cloudflare";
 import { inspectTencentZone } from "./providers/tencent";
-import type { FetchLike, NormalizedRecord } from "./types";
+import type { FetchLike, NormalizedRecord, Provider } from "./types";
 
 interface InspectDependencies {
   config: AppConfig;
@@ -19,6 +20,12 @@ interface InspectDependencies {
   inspectTencentZone: (options: {
     secretId: string;
     secretKey: string;
+    zoneName: string;
+    fetchImpl?: FetchLike;
+  }) => Promise<NormalizedRecord[]>;
+  inspectAliyunZone: (options: {
+    accessKeyId: string;
+    accessKeySecret: string;
     zoneName: string;
     fetchImpl?: FetchLike;
   }) => Promise<NormalizedRecord[]>;
@@ -37,6 +44,7 @@ export async function runInspectCommand(
   const inspectCloudflare =
     deps?.inspectCloudflareZone ?? inspectCloudflareZone;
   const inspectTencent = deps?.inspectTencentZone ?? inspectTencentZone;
+  const inspectAliyun = deps?.inspectAliyunZone ?? inspectAliyunZone;
 
   const zoneNames = cliArgs.zone
     ? [cliArgs.zone]
@@ -47,7 +55,7 @@ export async function runInspectCommand(
     zones: {} as Record<
       string,
       {
-        provider: "cloudflare" | "tencent";
+        provider: Provider;
         records: NormalizedRecord[];
       }
     >,
@@ -61,6 +69,15 @@ export async function runInspectCommand(
           provider: zone.provider,
           records: await inspectCloudflare({
             apiToken: config.credentials.cloudflare.apiToken,
+            zoneName,
+          }),
+        };
+      } else if (zone.provider === "aliyun") {
+        output.zones[zoneName] = {
+          provider: zone.provider,
+          records: await inspectAliyun({
+            accessKeyId: config.credentials.aliyun.accessKeyId,
+            accessKeySecret: config.credentials.aliyun.accessKeySecret,
             zoneName,
           }),
         };

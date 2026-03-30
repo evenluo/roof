@@ -2,11 +2,13 @@ import type { ApplyCliArgs } from "./cli";
 import { loadRuntimeConfig, type AppConfig } from "./config";
 import { loadDeclarationFile, type Declaration } from "./declaration";
 import { computeZoneDiff } from "./diff";
-import { normalizeCloudflareRecord, normalizeRecordCollection } from "./normalize/records";
+import { normalizeAliyunRecord, normalizeCloudflareRecord, normalizeRecordCollection } from "./normalize/records";
 import { formatApplyOutput } from "./apply-output";
+import { fetchAliyunZoneWithIds, createAliyunRecord, updateAliyunRecord, deleteAliyunRecord } from "./providers/aliyun";
 import { fetchCloudflareZoneWithIds, createCloudflareRecord, updateCloudflareRecord, deleteCloudflareRecord, type CloudflareRawRecord } from "./providers/cloudflare";
 import { fetchTencentZoneWithIds, createTencentRecord, modifyTencentRecord, deleteTencentRecord } from "./providers/tencent";
 import type {
+  AliyunManagedRecord,
   ApplyError,
   ApplyResult,
   FetchLike,
@@ -71,6 +73,32 @@ interface ApplyDependencies {
     secretKey: string;
     zoneName: string;
     recordId: number;
+    fetchImpl?: FetchLike;
+  }) => Promise<void>;
+  fetchAliyunZoneWithIds: (options: {
+    accessKeyId: string;
+    accessKeySecret: string;
+    zoneName: string;
+    fetchImpl?: FetchLike;
+  }) => Promise<AliyunManagedRecord[]>;
+  createAliyunRecord: (options: {
+    accessKeyId: string;
+    accessKeySecret: string;
+    zoneName: string;
+    record: NormalizedRecord;
+    fetchImpl?: FetchLike;
+  }) => Promise<void>;
+  updateAliyunRecord: (options: {
+    accessKeyId: string;
+    accessKeySecret: string;
+    recordId: string;
+    record: NormalizedRecord;
+    fetchImpl?: FetchLike;
+  }) => Promise<void>;
+  deleteAliyunRecord: (options: {
+    accessKeyId: string;
+    accessKeySecret: string;
+    recordId: string;
     fetchImpl?: FetchLike;
   }) => Promise<void>;
 }
@@ -261,6 +289,90 @@ async function applyTencentZone(options: {
   return zoneResult;
 }
 
+async function applyAliyunZone(options: {
+  config: AppConfig;
+  zoneName: string;
+  declared: NormalizedRecord[];
+  deps: ApplyDependencies;
+}): Promise<ZoneApplyResult | ZoneApplyError> {
+  const { config, zoneName, declared, deps } = options;
+  const { accessKeyId, accessKeySecret } = config.credentials.aliyun;
+
+  let managedRecords: AliyunManagedRecord[];
+  try {
+    managedRecords = await deps.fetchAliyunZoneWithIds({ accessKeyId, accessKeySecret, zoneName });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return { provider: "aliyun", error: `Failed to query zone "${zoneName}": ${message}` };
+  }
+
+  const remoteNormalized = normalizeRecordCollection(
+    managedRecords.map((r) => normalizeAliyunRecord({ RR: r.name, Type: r.type, Value: r.value, TTL: r.ttl })),
+  );
+
+  const diff = computeZoneDiff(declared, remoteNormalized);
+
+  const idMap = new Map(
+    managedRecords.map((r) => [`${r.name}:${r.type}`, r.recordId]),
+  );
+
+  const declaredMap = new Map(declared.map((r) => [recordKey(r), r]));
+  const skippedKeys = new Set(diff.skippedMultiValue.map(recordKey));
+
+  const zoneResult: ZoneApplyResult = {
+    provider: "aliyun",
+    created: [],
+    updated: [],
+    deleted: [],
+    skippedMultiValue: diff.skippedMultiValue,
+    errors: [],
+  };
+
+  for (const record of diff.creates) {
+    if (skippedKeys.has(recordKey(record))) continue;
+    try {
+      await deps.createAliyunRecord({ accessKeyId, accessKeySecret, zoneName, record });
+      zoneResult.created.push(record);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      zoneResult.errors.push({ operation: "create", record, error: message } satisfies ApplyError);
+    }
+  }
+
+  for (const update of diff.updates) {
+    const key = `${update.name}:${update.type}`;
+    if (skippedKeys.has(key)) continue;
+    const recordId = idMap.get(key);
+    const record = declaredMap.get(key);
+
+    if (!recordId || !record) continue;
+
+    try {
+      await deps.updateAliyunRecord({ accessKeyId, accessKeySecret, recordId, record });
+      zoneResult.updated.push(update);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      zoneResult.errors.push({ operation: "update", record, error: message } satisfies ApplyError);
+    }
+  }
+
+  for (const record of diff.deletes) {
+    const recordId = idMap.get(recordKey(record));
+
+    if (!recordId) continue;
+
+    try {
+      await deps.deleteAliyunRecord({ accessKeyId, accessKeySecret, recordId });
+      zoneResult.deleted.push(record);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      zoneResult.errors.push({ operation: "delete", record, error: message } satisfies ApplyError);
+    }
+  }
+
+  return zoneResult;
+}
+
 export interface ApplyCommandResult {
   output: string;
   hasErrors: boolean;
@@ -290,6 +402,10 @@ export async function runApplyCommand(
   const createTc = deps?.createTencentRecord ?? createTencentRecord;
   const modifyTc = deps?.modifyTencentRecord ?? modifyTencentRecord;
   const deleteTc = deps?.deleteTencentRecord ?? deleteTencentRecord;
+  const fetchAliWithIds = deps?.fetchAliyunZoneWithIds ?? fetchAliyunZoneWithIds;
+  const createAli = deps?.createAliyunRecord ?? createAliyunRecord;
+  const updateAli = deps?.updateAliyunRecord ?? updateAliyunRecord;
+  const deleteAli = deps?.deleteAliyunRecord ?? deleteAliyunRecord;
 
   const resolvedDeps: ApplyDependencies = {
     config,
@@ -303,6 +419,10 @@ export async function runApplyCommand(
     createTencentRecord: createTc,
     modifyTencentRecord: modifyTc,
     deleteTencentRecord: deleteTc,
+    fetchAliyunZoneWithIds: fetchAliWithIds,
+    createAliyunRecord: createAli,
+    updateAliyunRecord: updateAli,
+    deleteAliyunRecord: deleteAli,
   };
 
   const declaration = loadDecl(cliArgs.file);
@@ -326,6 +446,13 @@ export async function runApplyCommand(
 
     if (declaredZone.provider === "cloudflare") {
       result.zones[zoneName] = await applyCloudflareZone({
+        config,
+        zoneName,
+        declared: declaredZone.records,
+        deps: resolvedDeps,
+      });
+    } else if (declaredZone.provider === "aliyun") {
+      result.zones[zoneName] = await applyAliyunZone({
         config,
         zoneName,
         declared: declaredZone.records,

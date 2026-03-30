@@ -8,10 +8,14 @@ const baseConfig: AppConfig = {
   credentials: {
     cloudflare: { apiToken: "cf-token" },
     tencent: { secretId: "secret-id", secretKey: "secret-key" },
+    aliyun: { accessKeyId: "ali-key-id", accessKeySecret: "ali-key-secret" },
   },
   zones: {
     "ihongben.com": { provider: "tencent" },
     "maxtap.net": { provider: "cloudflare" },
+    "jctx.cc": { provider: "aliyun" },
+    "junlintianxia.icu": { provider: "aliyun" },
+    "junlintianxia.top": { provider: "aliyun" },
   },
 };
 
@@ -34,6 +38,7 @@ describe("runImportCommand", () => {
         config: baseConfig,
         inspectCloudflareZone: async () => cloudflareRecords,
         inspectTencentZone: async () => tencentRecords,
+        inspectAliyunZone: async () => [],
         fileExists: () => false,
         writeOutput: (path, content) => written.push({ path, content }),
       },
@@ -76,6 +81,7 @@ describe("runImportCommand", () => {
         config: baseConfig,
         inspectCloudflareZone: async () => cloudflareRecords,
         inspectTencentZone: async () => tencentRecords,
+        inspectAliyunZone: async () => [],
         fileExists: () => true,
         writeOutput: (_, content) => written.push(content),
       },

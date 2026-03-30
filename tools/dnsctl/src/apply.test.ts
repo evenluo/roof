@@ -11,10 +11,14 @@ const baseConfig: AppConfig = {
   credentials: {
     cloudflare: { apiToken: "cf-token" },
     tencent: { secretId: "secret-id", secretKey: "secret-key" },
+    aliyun: { accessKeyId: "ali-key-id", accessKeySecret: "ali-key-secret" },
   },
   zones: {
     "ihongben.com": { provider: "tencent" },
     "maxtap.net": { provider: "cloudflare" },
+    "jctx.cc": { provider: "aliyun" },
+    "junlintianxia.icu": { provider: "aliyun" },
+    "junlintianxia.top": { provider: "aliyun" },
   },
 };
 

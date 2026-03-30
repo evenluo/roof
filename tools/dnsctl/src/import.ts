@@ -5,6 +5,7 @@ import { dirname, resolve } from "node:path";
 import type { ImportCliArgs } from "./cli";
 import { loadRuntimeConfig, type AppConfig } from "./config";
 import type { Declaration } from "./declaration";
+import { inspectAliyunZone } from "./providers/aliyun";
 import { inspectCloudflareZone } from "./providers/cloudflare";
 import { inspectTencentZone } from "./providers/tencent";
 import { SUPPORTED_RECORD_TYPES } from "./types";
@@ -20,6 +21,12 @@ interface ImportDependencies {
   inspectTencentZone: (options: {
     secretId: string;
     secretKey: string;
+    zoneName: string;
+    fetchImpl?: FetchLike;
+  }) => Promise<NormalizedRecord[]>;
+  inspectAliyunZone: (options: {
+    accessKeyId: string;
+    accessKeySecret: string;
     zoneName: string;
     fetchImpl?: FetchLike;
   }) => Promise<NormalizedRecord[]>;
@@ -41,6 +48,7 @@ export async function runImportCommand(
     });
   const inspectCf = deps?.inspectCloudflareZone ?? inspectCloudflareZone;
   const inspectTc = deps?.inspectTencentZone ?? inspectTencentZone;
+  const inspectAli = deps?.inspectAliyunZone ?? inspectAliyunZone;
 
   const outputPath = resolve(cliArgs.output);
 
@@ -68,6 +76,12 @@ export async function runImportCommand(
       if (zone.provider === "cloudflare") {
         records = await inspectCf({
           apiToken: config.credentials.cloudflare.apiToken,
+          zoneName,
+        });
+      } else if (zone.provider === "aliyun") {
+        records = await inspectAli({
+          accessKeyId: config.credentials.aliyun.accessKeyId,
+          accessKeySecret: config.credentials.aliyun.accessKeySecret,
           zoneName,
         });
       } else {

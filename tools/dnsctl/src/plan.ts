@@ -3,6 +3,7 @@ import { loadRuntimeConfig, type AppConfig } from "./config";
 import { loadDeclarationFile, type Declaration } from "./declaration";
 import { computeZoneDiff } from "./diff";
 import { formatPlanOutput } from "./plan-output";
+import { inspectAliyunZone } from "./providers/aliyun";
 import { inspectCloudflareZone } from "./providers/cloudflare";
 import { inspectTencentZone } from "./providers/tencent";
 import type {
@@ -28,6 +29,12 @@ interface PlanDependencies {
     zoneName: string;
     fetchImpl?: FetchLike;
   }) => Promise<NormalizedRecord[]>;
+  inspectAliyunZone: (options: {
+    accessKeyId: string;
+    accessKeySecret: string;
+    zoneName: string;
+    fetchImpl?: FetchLike;
+  }) => Promise<NormalizedRecord[]>;
 }
 
 function defaultNow(): string {
@@ -44,6 +51,7 @@ export async function runPlanCommand(
   const inspectCloudflare =
     deps?.inspectCloudflareZone ?? inspectCloudflareZone;
   const inspectTencent = deps?.inspectTencentZone ?? inspectTencentZone;
+  const inspectAliyun = deps?.inspectAliyunZone ?? inspectAliyunZone;
 
   const declaration = loadDecl(cliArgs.file);
 
@@ -71,6 +79,12 @@ export async function runPlanCommand(
       if (declaredZone.provider === "cloudflare") {
         remoteRecords = await inspectCloudflare({
           apiToken: config.credentials.cloudflare.apiToken,
+          zoneName,
+        });
+      } else if (declaredZone.provider === "aliyun") {
+        remoteRecords = await inspectAliyun({
+          accessKeyId: config.credentials.aliyun.accessKeyId,
+          accessKeySecret: config.credentials.aliyun.accessKeySecret,
           zoneName,
         });
       } else {

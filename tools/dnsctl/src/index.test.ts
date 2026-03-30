@@ -13,10 +13,17 @@ const baseConfig: AppConfig = {
       secretId: "secret-id",
       secretKey: "secret-key",
     },
+    aliyun: {
+      accessKeyId: "ali-key-id",
+      accessKeySecret: "ali-key-secret",
+    },
   },
   zones: {
     "ihongben.com": { provider: "tencent" },
     "maxtap.net": { provider: "cloudflare" },
+    "jctx.cc": { provider: "aliyun" },
+    "junlintianxia.icu": { provider: "aliyun" },
+    "junlintianxia.top": { provider: "aliyun" },
   },
 };
 
@@ -51,6 +58,7 @@ describe("runInspectCommand", () => {
         now: () => "2026-03-27T15:00:00+08:00",
         inspectCloudflareZone: async () => cloudflareRecords,
         inspectTencentZone: async () => tencentRecords,
+        inspectAliyunZone: async () => [],
       },
     );
 
