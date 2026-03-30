@@ -37,6 +37,11 @@ zones:
         value: '"202512111428102wdr8zzgrlogudxzyc6kppnqdc0qa5zsydy1g5qbhmdrrqe30b"'
         ttl: auto
         proxied: false
+      - name: cpa
+        type: A
+        value: 43.167.225.128
+        ttl: auto
+        proxied: true
       - name: dokploy
         type: A
         value: 43.167.225.128
@@ -57,3 +62,28 @@ zones:
         value: 43.167.225.128
         ttl: auto
         proxied: true
+  jctx.cc:
+    provider: aliyun
+    records: []
+  junlintianxia.icu:
+    provider: aliyun
+    records: []
+  junlintianxia.top:
+    provider: aliyun
+    records:
+      - name: dx
+        type: CNAME
+        value: dx.junlintianxia.top.xdna.xczhidao.com
+        ttl: 600
+      - name: dxtz200
+        type: A
+        value: 47.100.167.39
+        ttl: 600
+      - name: hd
+        type: CNAME
+        value: jc-console.zms18.cn
+        ttl: 600
+      - name: qw200
+        type: A
+        value: 47.100.167.39
+        ttl: 600
