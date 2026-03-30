@@ -4,6 +4,13 @@ import type {
   TencentRecord,
 } from "../types";
 
+export interface AliyunRawRecord {
+  RR: string;
+  Type: string;
+  Value: string;
+  TTL: number;
+}
+
 export function denormalizeRecordName(zoneName: string, normalizedName: string): string {
   if (normalizedName === "@") return zoneName;
   return `${normalizedName}.${zoneName}`;
@@ -40,6 +47,17 @@ export function normalizeTencentRecord(
 ): NormalizedRecord {
   return {
     name: record.Name,
+    type: record.Type,
+    value: record.Value,
+    ttl: record.TTL,
+  };
+}
+
+export function normalizeAliyunRecord(
+  record: AliyunRawRecord,
+): NormalizedRecord {
+  return {
+    name: record.RR === "@" ? "@" : record.RR,
     type: record.Type,
     value: record.Value,
     ttl: record.TTL,

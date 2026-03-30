@@ -47,7 +47,16 @@ export const SUPPORTED_RECORD_TYPES = [
 ] as const;
 export type SupportedRecordType = (typeof SUPPORTED_RECORD_TYPES)[number];
 
-export type Provider = "cloudflare" | "tencent";
+export interface AliyunManagedRecord {
+  recordId: string;
+  name: string;
+  type: string;
+  value: string;
+  ttl: number;
+  line: string;
+}
+
+export type Provider = "cloudflare" | "tencent" | "aliyun";
 
 export interface FieldChange {
   from: string | number | boolean;
