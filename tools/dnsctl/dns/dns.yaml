@@ -70,22 +70,22 @@ zones:
     records:
       - name: '@'
         type: A
-        value: 81.71.34.171
+        value: 8.135.79.243
         ttl: 600
       - name: www
         type: A
-        value: 81.71.34.171
+        value: 8.135.79.243
         ttl: 600
   junlintianxia.top:
     provider: aliyun
     records:
       - name: '@'
         type: A
-        value: 81.71.34.171
+        value: 8.135.79.243
         ttl: 600
       - name: www
         type: A
-        value: 81.71.34.171
+        value: 8.135.79.243
         ttl: 600
       - name: dx
         type: CNAME
