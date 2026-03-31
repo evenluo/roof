@@ -3,7 +3,7 @@ name: DNS Apply
 on:
   push:
     branches:
-      - master
+      - dns-release
     paths:
       - 'tools/dnsctl/dns/dns.yaml'
   workflow_dispatch:

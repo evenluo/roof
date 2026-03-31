@@ -197,7 +197,7 @@ make plan                # 确认 no changes（基线一致）
 | Workflow | 触发条件 | 行为 |
 |----------|---------|------|
 | `dns-plan.yml` | PR 中修改 `tools/dnsctl/dns/dns.yaml` | 运行 plan，结果以评论形式发到 PR |
-| `dns-apply.yml` | master 分支合并后 / 手动触发 | 运行 apply，将变更同步到远端 |
+| `dns-apply.yml` | `dns-release` 分支合并后 / 手动触发 | 运行 apply，将变更同步到远端 |
 
 手动触发 apply（`workflow_dispatch`）时可以指定 zone，留空则全量应用。
 
