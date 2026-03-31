@@ -38,6 +38,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           Q_DNS_RECORD_SECRET_ID: ${{ secrets.Q_DNS_RECORD_SECRET_ID }}
           Q_DNS_RECORD_SECRET_KEY: ${{ secrets.Q_DNS_RECORD_SECRET_KEY }}
+          ALIYUN_DNS_SECRET_ID: ${{ secrets.ALIYUN_DNS_SECRET_ID }}
+          ALIYUN_DNS_SECRET_KEY: ${{ secrets.ALIYUN_DNS_SECRET_KEY }}
           ZONE_INPUT: ${{ github.event.inputs.zone }}
         run: |
           if [ -n "$ZONE_INPUT" ]; then
