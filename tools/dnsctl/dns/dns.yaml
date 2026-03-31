@@ -79,6 +79,10 @@ zones:
   junlintianxia.top:
     provider: aliyun
     records:
+      - name: '@'
+        type: A
+        value: 81.71.34.171
+        ttl: 600
       - name: dx
         type: CNAME
         value: dx.junlintianxia.top.xdna.xczhidao.com
